@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity{
     private boolean changecolor = true;
     //EditText input = (EditText) findViewById(R.id.input);
     String inputstring;
+    //sample rate is 8000, audio format is channel mono and audio encode is PCM_16BIT
     private static final int SampleRate = 8000;
     private static final int Channel = AudioFormat.CHANNEL_IN_MONO;
     private static final int AudioEncode = AudioFormat.ENCODING_PCM_16BIT;
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //EditText input = (EditText) findViewById(R.id.input);
+        //set up button
         setupButton();
         setupInputButton();
 
@@ -85,8 +86,8 @@ public class MainActivity extends AppCompatActivity{
         startbutton.setOnClickListener(
                 new Button.OnClickListener() {
                     public void onClick(View v) {
-                        //onCheckedChanged(startbutton,true);
-
+                        //these few lines help button to change color, message and functions every time we press it.
+                        //the default button is green and message is "press button to start recording"
                         if(changecolor){
                             try {
                                 startRecording();
@@ -110,7 +111,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
 
-
+    //function for record audio and write file is in writeAudioDataToFile function
     private void startRecording() throws IOException {
 
         mRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
@@ -126,7 +127,8 @@ public class MainActivity extends AppCompatActivity{
         },"AudioRecorder Thread");
         recordingThread.start();
     }
-
+    
+    //write raw audio data into a pcm file.
     private void writeAudioDataToFile(){
 
         String state;
@@ -154,6 +156,7 @@ public class MainActivity extends AppCompatActivity{
                     short sData[] = new short[BufferElements2Rec];
                     mRecorder.read(sData, 0, BufferElements2Rec);
                     System.out.println("short writing to file" + sData.toString());
+                    //change short to byte using a helper function shortToByte
                     byte bData[] = shortToByte(sData);
                     steam.write(bData);
                 }
@@ -169,7 +172,7 @@ public class MainActivity extends AppCompatActivity{
 
     }
 
-
+    //stop recording function
     private void stopRcording(){
         if(mRecorder != null){
             isRecording = false;
@@ -179,7 +182,8 @@ public class MainActivity extends AppCompatActivity{
             recordingThread= null;
         }
     }
-
+    
+    //a helper function change short to byte.
     private byte[] shortToByte(short[] Data){
         int arraysize = Data.length;
         byte[] byteArray = new byte[arraysize*2];
@@ -192,7 +196,7 @@ public class MainActivity extends AppCompatActivity{
 
 
 
-
+    //cannot use these function because complete this will need sdk to be at least is sdk21, too high.
     /*public void onClick(DialogInterface dialog, int which) {
         switch (which){
             case DialogInterface.BUTTON_POSITIVE:
