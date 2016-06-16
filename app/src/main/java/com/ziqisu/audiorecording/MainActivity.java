@@ -1,26 +1,23 @@
 package com.ziqisu.audiorecording;
 
 //import android.hardware.SensorManager;
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.media.MediaRecorder;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.graphics.Color;
 import android.widget.EditText;
-import android.widget.Toast;
 import android.util.Log;
 import android.media.AudioRecord;
 import android.media.AudioFormat;
-import android.media.AudioManager;
-import android.media.AudioTrack;
-import android.media.MediaRecorder;
-import android.os.IBinder;
 import android.content.Context;
-import android.content.Intent;
+
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -38,9 +35,9 @@ public class MainActivity extends AppCompatActivity{
     private AudioRecord mRecorder = null;
 
     private boolean changecolor = true;
-    //EditText input = (EditText) findViewById(R.id.input);
+
     String inputstring;
-    private static final int SampleRate = 8000;
+    private static final int SampleRate = 16000;
     private static final int Channel = AudioFormat.CHANNEL_IN_MONO;
     private static final int AudioEncode = AudioFormat.ENCODING_PCM_16BIT;
     private Thread recordingThread = null;
@@ -48,7 +45,7 @@ public class MainActivity extends AppCompatActivity{
     int BytesPerElement = 2;
     private boolean isRecording = false;
 
-    //chanelConfiguration = AudioFormat.ENCODING
+
 
 
     @Override
@@ -56,24 +53,15 @@ public class MainActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //EditText input = (EditText) findViewById(R.id.input);
+
+
+
+        //final EditText input = (EditText) findViewById(R.id.input);
         setupButton();
-        setupInputButton();
+
 
     }
 
-    private void setupInputButton(){
-        final EditText input = (EditText) findViewById(R.id.input);
-        final Button inputbutton = (Button)findViewById(R.id.inputbutton);
-        inputbutton.setOnClickListener(
-                new Button.OnClickListener(){
-                    public void onClick(View v){
-                        inputstring = input.getText().toString();
-                        Log.i("input string is:",inputstring);
-                    }
-                }
-        );
-    }
 
 
 
@@ -81,12 +69,14 @@ public class MainActivity extends AppCompatActivity{
     private void setupButton() {
         //get a reference to the button
         final Button startbutton = (Button)findViewById(R.id.button);
+        final EditText input = (EditText) findViewById(R.id.input);
         //set the click listener to run my code
         startbutton.setOnClickListener(
                 new Button.OnClickListener() {
                     public void onClick(View v) {
                         //onCheckedChanged(startbutton,true);
-
+                        inputstring = input.getText().toString();
+                        Log.i("input string is:",inputstring);
                         if(changecolor){
                             try {
                                 startRecording();
@@ -190,23 +180,27 @@ public class MainActivity extends AppCompatActivity{
         return byteArray;
     }
 
+    //function to touch outside the keyboard to hide keyboard
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        View view = getCurrentFocus();
+        boolean ret = super.dispatchTouchEvent(event);
 
+        if (view instanceof EditText) {
+            View w = getCurrentFocus();
+            int scrcoords[] = new int[2];
+            w.getLocationOnScreen(scrcoords);
+            //get the location of edittext
+            float x = event.getRawX() + w.getLeft() - scrcoords[0];
+            float y = event.getRawY() + w.getTop() - scrcoords[1];
 
-
-    /*public void onClick(DialogInterface dialog, int which) {
-        switch (which){
-            case DialogInterface.BUTTON_POSITIVE:
-                Toast.makeText(this,"OK, clicked", Toast.LENGTH_SHORT).show();
-                Log.i("I clicked the button:","run at this");
-                String input = textUserInput.getText().toString();
-                Log.i("the input is:",input);
-                if(input == null){
-                    Log.i("the input is null","why?");
-                }
-                break;
-            case DialogInterface.BUTTON_NEGATIVE:
-                Toast.makeText(this,"Cancel, clicked", Toast.LENGTH_SHORT).show();
-                break;
+            if (event.getAction() == MotionEvent.ACTION_UP
+                    && (x < w.getLeft() || x >= w.getRight()
+                    || y < w.getTop() || y > w.getBottom()) ) {
+                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(getWindow().getCurrentFocus().getWindowToken(), 0);
+            }
         }
-    }*/
+        return ret;
+    }
+
 }
