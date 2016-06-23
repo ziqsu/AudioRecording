@@ -1,10 +1,15 @@
 package com.ziqisu.audiorecording;
 
 //import android.hardware.SensorManager;
+import android.Manifest;
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.media.MediaRecorder;
 import android.os.Environment;
+import android.os.PowerManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -17,6 +22,7 @@ import android.util.Log;
 import android.media.AudioRecord;
 import android.media.AudioFormat;
 import android.content.Context;
+import android.os.PowerManager.WakeLock;
 
 
 import java.io.DataOutputStream;
@@ -24,6 +30,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.AllPermission;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -45,6 +52,16 @@ public class MainActivity extends AppCompatActivity{
     int BytesPerElement = 2;
     private boolean isRecording = false;
 
+    //variable need to request permission at runtime
+    final private int RequestCodeAskPermission = 124;
+    private static final int WritePermission = 0x11;
+    private static final int AudioPermission = 0x12;
+    private static final int WakePermission = 0x13;
+    private static final int AllPermission = WritePermission+AudioPermission+WakePermission;
+    private static String[] Permissions = {Manifest.permission.WRITE_EXTERNAL_STORAGE,
+    Manifest.permission.RECORD_AUDIO,Manifest.permission.WAKE_LOCK};
+    WakeLock wl;
+
 
 
 
@@ -56,10 +73,46 @@ public class MainActivity extends AppCompatActivity{
 
 
 
-        //final EditText input = (EditText) findViewById(R.id.input);
+
         setupButton();
 
+        boolean granted = true;
+        for(String permission: Permissions){
+            granted = granted && ContextCompat.checkSelfPermission(this,permission)==
+                    PackageManager.PERMISSION_GRANTED;
+        }
+        if(!granted){
+            Log.i("request permission:","request permissions");
+            ActivityCompat.requestPermissions(this,Permissions, AllPermission);
+        }
 
+        PowerManager pm = (PowerManager)getSystemService(Context.POWER_SERVICE);
+        WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"wakelock");
+        wl.acquire();
+
+
+    }
+
+
+    protected void onDestroy(){
+        super.onDestroy();
+        wl.release();
+    }
+
+
+    public void onRequestPermissionsResult(int requestCode, String[] Permissions, int[] grantedResults){
+        switch(requestCode){
+            case AllPermission:{
+                if(grantedResults.length>0
+                        && grantedResults[0] == PackageManager.PERMISSION_GRANTED
+                        && grantedResults[1] == PackageManager.PERMISSION_GRANTED
+                        && grantedResults[2] == PackageManager.PERMISSION_GRANTED){
+                    Log.i("activity:","All is granted");
+                }else{
+                    Log.i("activity:","Access denied");
+                }
+            }
+        }
     }
 
 
@@ -134,7 +187,7 @@ public class MainActivity extends AppCompatActivity{
             // create file name according to data and time
             DateFormat df = new SimpleDateFormat("ddMMyyyy,HH:mm");
             String date = df.format(Calendar.getInstance().getTime());
-            date = date+inputstring + ".pcm";
+            date = date+"+"+inputstring + ".pcm";
             File file = new File(Dir, date);
             try{
                 DataOutputStream steam = new DataOutputStream(new FileOutputStream(file));
@@ -143,7 +196,7 @@ public class MainActivity extends AppCompatActivity{
                     //use stringbuilder to create a line of data
                     short sData[] = new short[BufferElements2Rec];
                     mRecorder.read(sData, 0, BufferElements2Rec);
-                    System.out.println("short writing to file" + sData.toString());
+                    //System.out.println("short writing to file" + sData.toString());
                     byte bData[] = shortToByte(sData);
                     steam.write(bData);
                 }
